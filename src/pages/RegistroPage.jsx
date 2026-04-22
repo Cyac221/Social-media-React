@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import Navbar from '../Components/layout/Navbar'
 import Footer from '../Components/layout/Footer'
+import { api } from '../api/client'            // ← AGREGAR
 
 export default function RegistroPage() {
   const [form, setForm] = useState({
@@ -11,15 +12,31 @@ export default function RegistroPage() {
     fechaNacimiento: '1990-01-01',
     genero: ''
   })
+  const [error, setError]     = useState('')    // ← AGREGAR
+  const [loading, setLoading] = useState(false) // ← AGREGAR
   const navigate = useNavigate()
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  function handleRegistro() {
-    // Aquí iría la lógica real de registro
-    navigate('/')
+  async function handleRegistro() {   // ← async
+    setError('')
+    setLoading(true)
+    try {
+      await api.register({
+        nombre:           form.nombre,
+        email:            form.email,
+        contrasena:       form.password,      // el backend espera "contrasena"
+        fecha_nacimiento: form.fechaNacimiento,
+        genero:           form.genero
+      })
+      navigate('/login') // registro exitoso → ir a login
+    } catch (err) {
+      setError(err.message) // ej: "El correo ya está registrado"
+    } finally {
+      setLoading(false)
+    }
   }
 
   const formValido = form.nombre && form.email && form.password && form.genero
@@ -95,19 +112,30 @@ export default function RegistroPage() {
                 onChange={handleChange}
               >
                 <option value="" disabled>Selecciona</option>
-                <option value="hombre">Hombre</option>
-                <option value="mujer">Mujer</option>
-                <option value="otro">Otro</option>
+                <option value="Hombre">Hombre</option>
+                <option value="Mujer">Mujer</option>
+                <option value="Otro">Otro</option>
               </select>
             </div>
+
+            {/* ← AGREGAR: mensaje de error */}
+            {error && (
+              <p className="w3-text-red w3-center">
+                <i className="fa fa-exclamation-circle"></i> {error}
+              </p>
+            )}
 
             <div className="w3-section">
               <button
                 className="w3-button w3-theme-d2 w3-round w3-block w3-section"
                 onClick={handleRegistro}
-                disabled={!formValido}
+                disabled={!formValido || loading}
               >
-                <i className="fa fa-user-plus"></i> Registrarse
+                {/* ← AGREGAR: texto cambia mientras carga */}
+                {loading
+                  ? <><i className="fa fa-spinner fa-spin"></i> Registrando...</>
+                  : <><i className="fa fa-user-plus"></i> Registrarse</>
+                }
               </button>
             </div>
 

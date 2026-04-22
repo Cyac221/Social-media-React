@@ -2,16 +2,29 @@ import { useState } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import Navbar from '../Components/layout/Navbar'
 import Footer from '../Components/layout/Footer'
+import { api } from '../api/client'           // ← AGREGAR
+import { useAuth } from '../context/AuthContext' // ← AGREGAR
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError]       = useState('')    // ← AGREGAR
+  const [loading, setLoading]   = useState(false) // ← AGREGAR
+  const { login } = useAuth()                     // ← AGREGAR
   const navigate = useNavigate()
 
-  function handleLogin() {
-    // Aquí iría la lógica real de autenticación
-    // Por ahora redirige al home
-    navigate('/')
+  async function handleLogin() {   // ← async
+    setError('')
+    setLoading(true)
+    try {
+      const data = await api.login({ email, contrasena: password })
+      login(data.usuario)   // guarda { id, nombre, email } en el contexto
+      navigate('/')
+    } catch (err) {
+      setError(err.message) // muestra "Credenciales inválidas" si falla
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -52,13 +65,24 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* ← AGREGAR: mensaje de error */}
+            {error && (
+              <p className="w3-text-red w3-center">
+                <i className="fa fa-exclamation-circle"></i> {error}
+              </p>
+            )}
+
             <div className="w3-section">
               <button
                 className="w3-button w3-theme-d2 w3-round w3-block w3-section"
                 onClick={handleLogin}
-                disabled={!email.trim() || !password.trim()}
+                disabled={!email.trim() || !password.trim() || loading}
               >
-                <i className="fa fa-sign-in"></i> Acceder
+                {/* ← AGREGAR: texto cambia mientras carga */}
+                {loading
+                  ? <><i className="fa fa-spinner fa-spin"></i> Entrando...</>
+                  : <><i className="fa fa-sign-in"></i> Acceder</>
+                }
               </button>
             </div>
 

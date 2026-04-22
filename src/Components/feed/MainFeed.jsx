@@ -50,7 +50,16 @@ function CommentSection({ postId, comments, onAddComment }) {
 // ── Tarjeta de post ────────────────────────────────────────────────────────
 function PostCard({ post, onLike, onAddComment }) {
   const [showComments, setShowComments] = useState(false)
-  const { id, author, avatar, timestamp, text, images, likes, likedByMe, comments } = post
+
+  // ← adaptamos los campos del backend al componente
+  const id        = post.id
+  const author    = post.autor
+  const avatar    = post.avatar
+  const timestamp = post.fecha_creacion
+  const text      = post.texto
+  const imagen    = post.imagen_url
+  const likes     = post.total_likes
+  const comments  = post.comentarios || []  // ← por si viene undefined
 
   return (
     <div className="w3-container w3-card w3-white w3-round w3-margin">
@@ -61,21 +70,15 @@ function PostCard({ post, onLike, onAddComment }) {
       <br />
       <hr className="w3-clear" />
       <p>{text}</p>
-      {images.length > 0 && (
-        <div className="w3-row-padding" style={{ margin: '0 -16px' }}>
-          {images.map((img, i) => (
-            <div key={i} className="w3-half">
-              <img src={`https://www.w3schools.com/w3images/${img}`} style={{ width: '100%' }} alt={img} className="w3-margin-bottom" />
-            </div>
-          ))}
-        </div>
+      {imagen && (
+        <img src={imagen} style={{ width: '100%' }} alt="post" className="w3-margin-bottom" />
       )}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-        <button type="button" className={`w3-button w3-round ${likedByMe ? 'w3-blue' : 'w3-theme-d1'}`} onClick={() => onLike(id)}>
+        <button type="button" className="w3-button w3-round w3-theme-d1" onClick={() => onLike(id)}>
           <i className="fa fa-thumbs-up"></i> {likes > 0 && <span>{likes}</span>} Like
         </button>
         <button type="button" className="w3-button w3-theme-d2 w3-round" onClick={() => setShowComments(v => !v)}>
-          <i className="fa fa-comment"></i>{comments.length > 0 && <span> {comments.length}</span>} Comentar
+          <i className="fa fa-comment"></i> {post.total_comentarios > 0 && <span>{post.total_comentarios}</span>} Comentar
         </button>
       </div>
       {showComments && <CommentSection postId={id} comments={comments} onAddComment={onAddComment} />}
@@ -86,8 +89,10 @@ function PostCard({ post, onLike, onAddComment }) {
 // ── MainFeed ───────────────────────────────────────────────────────────────
 export default function MainFeed() {
   const [postText, setPostText] = useState('')
-  const { posts, addPost, toggleLike, addComment } = usePosts()
+  const { posts, addPost, toggleLike, addComment, loading, error } = usePosts()
 
+  if (loading) return <p className="w3-center w3-padding">Cargando publicaciones...</p>
+  if (error)   return <p className="w3-center w3-text-red">{error}</p>
   function handlePost() {
     addPost(postText)
     setPostText('')
